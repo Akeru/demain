@@ -21,8 +21,13 @@
             background: transparent;
             color: white;
         }
+
+        .wi {
+            width: 1.28571429em;
+            text-align: center;
+        }
     </style>
-    <script id="template" type="text/x-handlebars-template">
+    <script id="weather" type="text/x-handlebars-template">
         <div class="row">
             <div class="col-xs-12">
                 <p class="lead">{{city.name}}</p>
@@ -53,14 +58,27 @@
                 <p class="lead"><i class="wi wi-sunset"></i> {{weatherTemperature list.1.temp.eve}}</p>
             </div>
             <div class="col-xs-6 col-md-3">
-                <p class="lead"><i class="wi wi-night-clear"></i> {{weatherTemperature list.1.temp.night}}
-                </p>
+                <p class="lead"><i class="wi wi-night-clear"></i> {{weatherTemperature list.1.temp.night}} </p>
             </div>
         </div>
         <div class="row">
             <div class="col-xs-12">
                 <p class="lead">&nbsp;</p>
             </div>
+        </div>
+    </script>
+    <script id="nba" type="text/x-handlebars-template">
+        <div class="row">
+            <div class="col-xs-12">
+                <p class="lead">Basket</p>
+            </div>
+        </div>
+        <div class="row">
+            {{#each this}}
+            <div class="col-xs-3">
+                <p class="lead text-capitalize">{{awayteam}} &mdash; {{hometeam}}</p>
+            </div>
+            {{/each}}
         </div>
     </script>
 </head>
@@ -76,6 +94,11 @@
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0/handlebars.min.js"></script>
 <script type="text/javascript">
     var _cities = [];
+    var _weatherSource;
+    var _nbaSource;
+    var _weather;
+    var _nba;
+    var _content;
     Handlebars.registerHelper('weatherTemperature', function (temperature) {
         return new Handlebars.SafeString(temperature + ' <i class="wi wi-celsius"></i>');
     });
@@ -157,13 +180,28 @@
     function addCity(data) {
         _cities[_cities.length] = data;
     }
+    function addNba(data) {
+        _content.append(_nba(JSON.parse(data)));
+    }
     $(document).ready(function () {
-        var content = $('#content');
-        var source = $("#template").html();
-        var template = Handlebars.compile(source);
-        for	(var index = 0; index < _cities.length; index++) {
-            content.append(template(_cities[index]));
+        _content = $('#content');
+        _weatherSource = $('#weather').html();
+        _nbaSource = $('#nba').html();
+        _weather = Handlebars.compile(_weatherSource);
+        _nba = Handlebars.compile(_nbaSource);
+        for (var index = 0; index < _cities.length; index++) {
+            _content.append(_weather(_cities[index]));
         }
+        var date = new Date();
+        var yyyy = date.getFullYear().toString();
+        var mm = (date.getMonth() + 1).toString();
+        var dd = date.getDate().toString();
+        var today = yyyy + (mm[1] ? mm : "0" + mm[0]) + (dd[1] ? dd : "0" + dd[0]);
+        $.ajax({
+            url: 'http://apify.herokuapp.com/api/schedule.json?day=' + today,
+            dataType: 'jsonp',
+            jsonpCallback: 'addNba'
+        });
     });
 </script>
 <script type="text/javascript" src="http://api.openweathermap.org/data/2.5/forecast/daily?q=Brussels&mode=json&units=metric&cnt=2&lang=fr&callback=addCity"></script>
